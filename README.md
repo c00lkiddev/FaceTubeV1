@@ -1,4 +1,5 @@
 # FaceTube
+#STILL IN DEVELOPMENT, NOT MADE YET. SCHEDULED RELEASE AT 4/OCTOBER/2026.
 
 A social video platform — YouTube meets Facebook.
 
