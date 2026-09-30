@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "include": ["/*"],
+  "exclude": ["/profile/placeholder/*", "/watch/placeholder/*", "/search/*", "/_next/*", "/*.ico", "/*.png", "/*.svg"]
+}

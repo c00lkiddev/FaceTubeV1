@@ -1,0 +1,48 @@
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  password TEXT NOT NULL,
+  banned INTEGER DEFAULT 0,
+  createdAt INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS videos (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  url TEXT NOT NULL,
+  thumb TEXT,
+  views INTEGER DEFAULT 0,
+  authorId TEXT NOT NULL,
+  createdAt INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS posts (
+  id TEXT PRIMARY KEY,
+  body TEXT NOT NULL,
+  authorId TEXT NOT NULL,
+  createdAt INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS comments (
+  id TEXT PRIMARY KEY,
+  body TEXT NOT NULL,
+  userId TEXT NOT NULL,
+  videoId TEXT NOT NULL,
+  createdAt INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS likes (
+  id TEXT PRIMARY KEY,
+  userId TEXT NOT NULL,
+  videoId TEXT NOT NULL,
+  UNIQUE(userId, videoId)
+);
+
+CREATE TABLE IF NOT EXISTS subscriptions (
+  id TEXT PRIMARY KEY,
+  subscriberId TEXT NOT NULL,
+  channelId TEXT NOT NULL,
+  createdAt INTEGER NOT NULL,
+  UNIQUE(subscriberId, channelId)
+);

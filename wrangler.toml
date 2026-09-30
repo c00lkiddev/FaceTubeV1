@@ -1,0 +1,8 @@
+name = "ft"
+main = "workers/api.ts"
+compatibility_date = "2024-10-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "facetube"
+database_id = "1fbbfe08-451e-4197-b1ca-3c869cf68544"
