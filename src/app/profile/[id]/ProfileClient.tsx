@@ -93,7 +93,7 @@ export default function ProfileClient() {
               className={`mt-5 px-8 py-2.5 rounded-full font-bold text-sm transition ${
                 subscribed
                   ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                  : 'btn-purple text-white'
+                  : 'btn-purple'
               }`}
             >
               {subscribed ? 'Subscribed ✓' : 'Subscribe'}

@@ -34,52 +34,56 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-5 pt-16">
       <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-bold text-center mb-6">
-          {mode === 'login' ? 'Sign in to FaceTube' : 'Create account'}
+        <div className="w-14 h-14 rounded-2xl btn-purple mx-auto grid place-items-center text-2xl font-black text-white mb-6">
+          F
+        </div>
+        <h1 className="text-2xl font-bold text-center mb-6 text-navy-900">
+          {mode === 'login' ? 'Sign in' : 'Create account'}
         </h1>
 
-        <div className="rounded-2xl glass p-5 space-y-3">
+        <div className="card space-y-3">
           {mode === 'register' && (
             <input
-              className="w-full bg-navy-850 border border-white/5 rounded-xl px-4 py-2.5 text-white placeholder-gray-500"
+              className="w-full bg-white border border-purple-200 rounded-xl px-4 py-3 text-navy-900 placeholder-gray-400 focus:outline-none focus:border-purple-500"
               placeholder="Name"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
           )}
           <input
-            className="w-full bg-navy-850 border border-white/5 rounded-xl px-4 py-2.5 text-white placeholder-gray-500"
+            className="w-full bg-white border border-purple-200 rounded-xl px-4 py-3 text-navy-900 placeholder-gray-400 focus:outline-none focus:border-purple-500"
             placeholder="Email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
           <input
-            className="w-full bg-navy-850 border border-white/5 rounded-xl px-4 py-2.5 text-white placeholder-gray-500"
+            className="w-full bg-white border border-purple-200 rounded-xl px-4 py-3 text-navy-900 placeholder-gray-400 focus:outline-none focus:border-purple-500"
             placeholder="Password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && go()}
           />
 
-          {err && <p className="text-xs text-red-400">{err}</p>}
+          {err && <p className="text-xs text-red-500">{err}</p>}
 
           <button
             onClick={go}
             disabled={busy}
-            className="w-full py-2.5 rounded-xl btn-purple text-white font-semibold disabled:opacity-50"
+            className="w-full py-3 rounded-xl btn-purple font-bold disabled:opacity-50"
           >
             {busy ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create account'}
           </button>
         </div>
 
         <p className="text-center text-sm text-gray-500 mt-5">
-          {mode === 'login' ? "Don't have an account?" : 'Already have one?'}{' '}
+          {mode === 'login' ? "No account?" : 'Have one?'}{' '}
           <button
             onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
-            className="text-purple-400 font-semibold"
+            className="text-purple-600 font-semibold"
           >
             {mode === 'login' ? 'Sign up' : 'Sign in'}
           </button>

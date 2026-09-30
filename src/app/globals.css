@@ -19,10 +19,18 @@
 html,
 body {
   background: #ffffff;
-  color: #0f1833;
+  color: #0a1128;
   font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #0a1128;
+}
+
+p {
+  color: inherit;
 }
 
 .gradient-text {
@@ -34,8 +42,8 @@ body {
 
 .btn-purple {
   background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-  transition: transform 0.15s, box-shadow 0.15s;
   color: #ffffff;
+  transition: transform 0.15s, box-shadow 0.15s;
 }
 .btn-purple:hover {
   transform: translateY(-1px);
@@ -47,16 +55,7 @@ body {
 
 .card {
   background: #ffffff;
-  color: #0f1833;
-  border: 1px solid rgba(139, 92, 246, 0.15);
-  border-radius: 20px;
-  padding: 20px;
-  box-shadow: 0 2px 12px rgba(15, 24, 51, 0.06);
-}
-
-.card-dark {
-  background: #ffffff;
-  color: #0f1833;
+  color: #0a1128;
   border: 1px solid rgba(139, 92, 246, 0.15);
   border-radius: 20px;
   padding: 20px;
@@ -66,4 +65,10 @@ body {
 input,
 textarea {
   font-family: inherit;
+  color: #0a1128;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #9ca3af;
 }

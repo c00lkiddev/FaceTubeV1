@@ -87,7 +87,7 @@ export default function WatchClient() {
           <button
             onClick={addComment}
             disabled={busy}
-            className="px-5 rounded-xl btn-purple text-white font-semibold disabled:opacity-50"
+            className="px-5 rounded-xl btn-purple font-semibold disabled:opacity-50"
           >
             Send
           </button>

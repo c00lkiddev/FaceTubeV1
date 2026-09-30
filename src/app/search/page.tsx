@@ -26,7 +26,7 @@ function SearchInner() {
           Results for <span className="gradient-text">&ldquo;{q}&rdquo;</span>
         </h1>
         <p className="text-gray-500 mb-8">
-          Powered by YouTube — click any video to watch it there.
+          Click any video to play it right here on FaceTube.
         </p>
 
         {loading && <p className="text-gray-500">Searching…</p>}
@@ -38,9 +38,7 @@ function SearchInner() {
             return (
               <a
                 key={id}
-                href={`https://www.youtube.com/watch?v=${id}`}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={`/youtube/${id}?t=${encodeURIComponent(s.title)}`}
                 className="group block"
               >
                 <div className="aspect-video rounded-2xl overflow-hidden bg-purple-50 border border-purple-100 group-hover:border-purple-300 transition">

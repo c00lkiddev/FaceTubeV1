@@ -1,4 +1,12 @@
-/profile/*  /profile/placeholder  200
-/watch/*    /watch/placeholder    200
-/search     /search               200
-/*          /index.html           200
+/profile/placeholder/index.html  /profile/placeholder/index.html  200
+/profile/*                       /profile/placeholder/index.html  200
+/watch/placeholder/index.html    /watch/placeholder/index.html    200
+/watch/*                         /watch/placeholder/index.html    200
+/youtube/placeholder/index.html  /youtube/placeholder/index.html  200
+/youtube/*                       /youtube/placeholder/index.html  200
+/search                          /search/index.html               200
+/admin                           /admin/index.html                200
+/login                           /login/index.html                200
+/upload                          /upload/index.html               200
+/*                               /index.html                      200
+
