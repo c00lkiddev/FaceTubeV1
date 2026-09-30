@@ -1,4 +1,4 @@
-/profile/:id  /profile/placeholder/index.html  200
-/watch/:id    /watch/placeholder/index.html    200
-/search       /search/index.html               200
-/*            /index.html                      200
+/profile/*  /profile/placeholder  200
+/watch/*    /watch/placeholder    200
+/search     /search               200
+/*          /index.html           200
