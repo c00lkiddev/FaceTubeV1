@@ -1,6 +1,5 @@
 'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useRef, useEffect } from 'react';
 import { api, storage } from '@/lib/api';
 
 export default function Login() {
@@ -10,28 +9,57 @@ export default function Login() {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
-  const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
+  const busyRef = useRef(false);
 
-  async function go() {
-    setErr('');
-    setBusy(true);
-    try {
-      const data = await api.auth.login({ email, name, password, mode });
-      if (data.id) {
-        await storage.set('uid', data.id);
-        await storage.set('uname', data.name);
-        await storage.set('email', email);
-        await storage.set('isOwner', data.isOwner ? 'true' : 'false');
-        window.location.href = '/';
-      } else {
-        setErr(data.error || 'Something went wrong');
+  useEffect(() => {
+    busyRef.current = busy;
+  }, [busy]);
+
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) return;
+
+    async function handleSubmit(e: Event) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (busyRef.current) return;
+
+      setErr('');
+      setBusy(true);
+
+      try {
+        const data = await api.auth.login({ email, name, password, mode });
+        if (data && data.id) {
+          await storage.set('uid', data.id);
+          await storage.set('uname', data.name);
+          await storage.set('email', email);
+          await storage.set('isOwner', data.isOwner ? 'true' : 'false');
+          window.location.href = '/';
+        } else {
+          setErr((data && data.error) || 'Something went wrong');
+        }
+      } catch (err: any) {
+        const msg = String(err?.message || '');
+        if (msg.includes('401') || msg.includes('Bad creds')) {
+          setErr('Wrong email or password');
+        } else if (msg.includes('403')) {
+          setErr('Account banned');
+        } else if (msg.includes('400')) {
+          setErr('Email already registered');
+        } else if (msg.includes('fetch') || msg.includes('Network')) {
+          setErr('Check your internet');
+        } else {
+          setErr('Something went wrong');
+        }
+      } finally {
+        setBusy(false);
       }
-    } catch {
-      setErr('Network error');
-    } finally {
-      setBusy(false);
     }
-  }
+
+    form.addEventListener('submit', handleSubmit as EventListener);
+    return () => form.removeEventListener('submit', handleSubmit as EventListener);
+  }, [email, name, password, mode]);
 
   return (
     <div className="min-h-screen flex items-center justify-center px-5 pt-16">
@@ -43,9 +71,11 @@ export default function Login() {
           {mode === 'login' ? 'Sign in' : 'Create account'}
         </h1>
 
-        <div className="card space-y-3">
+        <form ref={formRef} className="card space-y-3">
           {mode === 'register' && (
             <input
+              name="name"
+              autoComplete="name"
               className="w-full bg-white border border-purple-200 rounded-xl px-4 py-3 text-navy-900 placeholder-gray-400 focus:outline-none focus:border-purple-500"
               placeholder="Name"
               value={name}
@@ -53,39 +83,39 @@ export default function Login() {
             />
           )}
           <input
+            name="email"
+            type="email"
+            autoComplete="email"
             className="w-full bg-white border border-purple-200 rounded-xl px-4 py-3 text-navy-900 placeholder-gray-400 focus:outline-none focus:border-purple-500"
             placeholder="Email"
-            type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
           <input
+            name="password"
+            type="password"
+            autoComplete="current-password"
             className="w-full bg-white border border-purple-200 rounded-xl px-4 py-3 text-navy-900 placeholder-gray-400 focus:outline-none focus:border-purple-500"
             placeholder="Password"
-            type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && go()}
           />
 
           {err && <p className="text-xs text-red-500">{err}</p>}
 
-                            <button
-            type="button"
-            onPointerDown={(e) => {
-              e.preventDefault();
-              go();
-            }}
+          <button
+            type="submit"
             disabled={busy}
             className="w-full py-3 rounded-xl btn-purple font-bold disabled:opacity-50"
           >
             {busy ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create account'}
           </button>
-        </div>
+        </form>
 
         <p className="text-center text-sm text-gray-500 mt-5">
           {mode === 'login' ? "No account?" : 'Have one?'}{' '}
           <button
+            type="button"
             onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
             className="text-purple-600 font-semibold"
           >
