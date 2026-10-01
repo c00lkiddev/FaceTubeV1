@@ -2,7 +2,7 @@
 
 **A social video platform — YouTube meets Facebook.**
 
-🌐 **Live at: https://facetubeapp.pages.dev**
+# 🌐 **Live at: https://facetubeapp.pages.dev**
 
 FaceTube lets people upload videos, share short text updates, comment, and like content. It runs entirely on Cloudflare's edge network with no servers to maintain, no ads, and no paywalls.
 
@@ -20,9 +20,6 @@ FaceTube lets people upload videos, share short text updates, comment, and like 
 - ✅ Text posts in the home feed
 - ✅ User profiles with subscriber counts
 - ✅ Subscribe / unsubscribe between users
-- ✅ Verified badge at 1,000 subscribers
-- ✅ Owner crown badge
-- ✅ Admin panel — ban, unban, give subs, wipe content, broadcast
 - ✅ Responsive layout (mobile + desktop)
 - ✅ Android build via Capacitor
 - ✅ Zero cost — no ads, no tracking, no paid tiers
