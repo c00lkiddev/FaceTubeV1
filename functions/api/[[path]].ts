@@ -100,12 +100,16 @@ export const onRequest = async (context: any) => {
       if (body.mode === 'register') {
         const existing = await env.DB.prepare(`SELECT id FROM users WHERE email = ?`).bind(body.email).first();
         if (existing) return json({ error: 'Email taken' }, 400);
+        const safeName =
+          body.name && String(body.name).trim().length > 0
+            ? String(body.name).trim()
+            : 'user';
         const id = crypto.randomUUID();
         const hashed = await hash(body.password);
         await env.DB.prepare(
           `INSERT INTO users (id, email, name, password, banned, bonusSubs, createdAt) VALUES (?, ?, ?, ?, 0, 0, ?)`
-        ).bind(id, body.email, body.name, hashed, Date.now()).run();
-        return json({ id, name: body.name, isOwner: body.email === owner });
+        ).bind(id, body.email, safeName, hashed, Date.now()).run();
+        return json({ id, name: safeName, isOwner: body.email === owner });
       }
       const user: any = await env.DB.prepare(
         `SELECT id, name, password, email, banned FROM users WHERE email = ?`
