@@ -22,7 +22,7 @@ export default function Login() {
         await storage.set('uname', data.name);
         await storage.set('email', email);
         await storage.set('isOwner', data.isOwner ? 'true' : 'false');
-        router.push('/');
+        window.location.href = '/';
       } else {
         setErr(data.error || 'Something went wrong');
       }
