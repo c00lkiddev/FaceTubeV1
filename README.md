@@ -1,130 +1,210 @@
 # FaceTube
 
-# STILL IN DEVELOPMENT, NOT MADE YET. SCHEDULED RELEASE AT 4/OCTOBER/2026.
+**A social video platform — YouTube meets Facebook.**
 
-A social video platform — YouTube meets Facebook.
+🌐 **Live at: https://facetubeapp.pages.dev**
 
 FaceTube lets people upload videos, share short text updates, comment, and like content. It runs entirely on Cloudflare's edge network with no servers to maintain, no ads, and no paywalls.
 
-## Why it exists
-
-Most social platforms are heavy, cluttered, and ad-driven. FaceTube is a place to watch and share videos without the noise. Everything runs on free-tier infrastructure, so it can stay online indefinitely with no backend bill.
+---
 
 ## Features
 
-- User accounts with email and password
-- Video uploads by URL
-- Comments on videos, newest first
-- Likes that toggle per user
-- Text posts in the home feed
-- Responsive layout — sidebar on desktop, bottom nav on mobile
-- Android build via Capacitor
+- ✅ User accounts with email and password
+- ✅ Video uploads (URL-based)
+- ✅ Custom video player with seek, skip, volume, fullscreen
+- ✅ YouTube embed support — plays inline on FaceTube
+- ✅ YouTube search with live suggestions
+- ✅ Comments on videos, newest first
+- ✅ Likes that toggle per user
+- ✅ Text posts in the home feed
+- ✅ User profiles with subscriber counts
+- ✅ Subscribe / unsubscribe between users
+- ✅ Verified badge at 1,000 subscribers
+- ✅ Owner crown badge
+- ✅ Admin panel — ban, unban, give subs, wipe content, broadcast
+- ✅ Responsive layout (mobile + desktop)
+- ✅ Android build via Capacitor
+- ✅ Zero cost — no ads, no tracking, no paid tiers
+
+---
 
 ## Stack
 
 | Layer | Tech |
 |---|---|
-| Frontend | Next.js 14, React, Tailwind CSS |
-| Backend | Cloudflare Workers |
+| Frontend | Next.js 16, React, Tailwind CSS v4 |
+| Backend | Cloudflare Pages Functions |
 | Database | Cloudflare D1 |
 | Hosting | Cloudflare Pages |
 | Mobile | Capacitor |
 
-The frontend is a static export, hosted anywhere with zero runtime cost. The API is a single Worker handling every endpoint. The database is D1, serverless SQLite distributed across Cloudflare's network.
+The frontend is a static export. The API is a single Pages Function at `functions/api/[[path]].ts`. Data lives in D1 — serverless SQLite distributed across Cloudflare's network.
+
+---
 
 ## Architecture
 
-Pages are served from Cloudflare Pages as static HTML, CSS, and JavaScript. When a user loads a page, the browser fetches data from the Worker API, which queries D1 and returns JSON.
+Pages are pre-rendered as static HTML/CSS/JS and served from Cloudflare Pages. All routes use **static query strings** (`/watch?id=...`, `/profile?id=...`) so no dynamic routing or SPA fallback is needed.
 
-Auth is simple. On register, the password is hashed with SHA-256 via Web Crypto and stored in D1. On login, the same hash is compared. The user ID is stored in local storage and sent with requests that need identity.
+Auth is simple. On register, the password is SHA-256 hashed via Web Crypto and stored in D1. On login, the same hash is compared. The user ID is stored in `localStorage` and sent with requests that need identity.
 
 No session cookie, no JWT, no server-side rendering. Everything is client-side, which keeps hosting free.
 
-## Local development
+---
+
+## Running locally
 
 Clone the repo and install dependencies.
 
+```bash
+git clone https://github.com/c00lkiddev/FaceTubeV1.git
+cd FaceTubeV1
 npm install
+```
 
 Start the dev server.
 
+```bash
 npm run dev
+```
 
-It runs on port 3000.
+It runs at http://localhost:3000.
 
-By default the frontend points at the local dev server for the API too. To develop against a real backend, create an environment file and set the API URL variable to your deployed Worker address.
+By default the frontend points at the local dev server for the API. To develop against the real backend, create `.env.local`:
 
-## Deploying the API
+```bash
+echo "NEXT_PUBLIC_API_URL=https://facetubeapp.pages.dev" > .env.local
+```
 
-Install Wrangler globally.
+---
 
+## Deploying
+
+Everything is on Cloudflare's free tier. First-time setup:
+
+```bash
 npm install -g wrangler
-
-Log in.
-
 wrangler login
-
-Create the database.
-
 wrangler d1 create facetube
+wrangler d1 execute facetube --file=./functions/schema.sql --remote
+```
 
-Paste the printed database ID into the Wrangler config under the D1 binding.
+Then deploy:
 
-Create the tables.
-
-wrangler d1 execute facetube --file=./workers/schema.sql
-
-Deploy.
-
-wrangler deploy
-
-Wrangler prints the Worker address after it finishes.
-
-## Deploying the frontend
-
-Point the API URL variable in the environment file at the Worker address from the previous step.
-
-Then build and deploy.
-
+```bash
+rm -rf .next out
 npm run build
-wrangler pages deploy out
+wrangler pages deploy out --project-name=facetubeapp --branch=main --commit-dirty=true
+```
 
-Wrangler asks for a project name on first run. Use facetube.
+After the first deploy, add these in the Cloudflare dashboard:
+
+**Settings → Environment variables (Production):**
+- `OWNER_EMAIL` — the email that gets the owner crown badge
+- `YOUTUBE_API_KEY` — for YouTube search + suggestions
+
+**Settings → Functions → D1 database bindings:**
+- Variable name: `DB`
+- D1 database: `facetube`
+
+Then redeploy so the bindings take effect:
+
+```bash
+wrangler pages deploy out --project-name=facetubeapp --branch=main --commit-dirty=true
+```
+
+---
+
+## Auto-deploy from GitHub
+
+Connect the repo in Cloudflare Pages:
+
+- **Framework preset:** None
+- **Build command:** `npm run build`
+- **Build output directory:** `out`
+
+Every push to `main` triggers a rebuild.
+
+---
+
+## Quick deploy script
+
+Save this as `~/deploy.sh` and run it whenever you change code:
+
+```bash
+#!/bin/bash
+cd ~/facetube
+rm -rf .next out
+npm run build || exit 1
+wrangler pages deploy out --project-name=facetubeapp --branch=main --commit-dirty=true
+git add -A
+git commit -m "deploy $(date +%Y-%m-%d_%H:%M)" 2>/dev/null
+git push 2>/dev/null
+echo "✅ Deployed"
+```
+
+Then:
+
+```bash
+chmod +x ~/deploy.sh
+~/deploy.sh
+```
+
+---
 
 ## Android build
 
-Build the mobile version.
-
+```bash
 npm run build:mobile
-
-Add the platform.
-
 npx cap add android
 npx cap sync
 npx cap open android
+```
 
-In Android Studio, go to Build, then Build APK(s). The APK lands in the Android output folder.
+In Android Studio: **Build → Build Bundle(s) / APK(s) → Build APK(s)**.
 
-Rename it to facetube.apk, move it into the public folder, and redeploy. It becomes downloadable from the download page.
+---
 
-## Auto-deploy
+## Project structure
 
-A GitHub Actions workflow builds and deploys the site on every push to main. Generate a Cloudflare API token from the dashboard using the "Edit Cloudflare Workers" template, add it as a repo secret named CF_API_TOKEN, and every push goes live automatically.
+```
+facetube/
+├── functions/
+│   ├── api/[[path]].ts       # Cloudflare Pages Function (entire API)
+│   └── schema.sql            # D1 database schema
+├── public/
+│   ├── _redirects            # Cloudflare routing rules
+│   └── _headers              # Cache + security headers
+├── src/
+│   ├── app/
+│   │   ├── page.tsx          # Home feed
+│   │   ├── login/page.tsx    # Login + register
+│   │   ├── upload/page.tsx   # Video upload
+│   │   ├── watch/page.tsx    # Video player + comments
+│   │   ├── profile/page.tsx  # User profile + subscribe
+│   │   ├── youtube/page.tsx  # YouTube embed player
+│   │   ├── search/page.tsx   # YouTube search results
+│   │   └── admin/page.tsx    # Owner-only control panel
+│   ├── components/
+│   │   ├── TopBar.tsx        # Nav + search with suggestions
+│   │   ├── VideoPlayer.tsx   # Custom player + YouTube detection
+│   │   ├── OwnerBadge.tsx    # Crown for owner
+│   │   └── VerifiedBadge.tsx # Blue check at 1k subs
+│   └── lib/
+│       └── api.ts            # API client + storage helpers
+├── next.config.ts
+├── package.json
+└── README.md
+```
 
-## Keepalive
-
-GitHub disables scheduled workflows after 60 days of inactivity. The keepalive workflow makes a small automated commit if the repo goes quiet, resetting the timer. Auto-deploy keeps running even if the project is idle for months.
+---
 
 ## Cost
 
-Zero. Cloudflare Pages, Workers, and D1 all have free tiers that don't expire. No credit card required.
+Zero. Cloudflare Pages, Functions, and D1 all have free tiers that don't expire. No credit card required.
 
-## Platforms
-
-- Web — any modern browser
-- Android — APK from the download page
-- iOS — Safari, Share, Add to Home Screen
-- Desktop — the web version
+---
 
 ## License
 
