@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">FaceTube</string>
+    <string name="title_activity_main">FaceTube</string>
+    <string name="package_name">com.c00lkiddev.facetube</string>
+    <string name="custom_url_scheme">com.c00lkiddev.facetube</string>
+</resources>
