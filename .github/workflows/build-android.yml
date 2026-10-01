@@ -27,6 +27,8 @@ jobs:
 
       - name: Build web
         run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: https://facetubeapp.pages.dev
 
       - name: Sync Capacitor
         run: npx cap sync android

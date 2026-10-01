@@ -93,7 +93,12 @@ export default function TopBar() {
               <button onClick={logout} className="text-sm font-semibold text-gray-500 hover:text-purple-600 transition hidden sm:block">Sign out</button>
             </>
           ) : (
-            <a href="/login" className="px-5 py-2 rounded-full btn-purple text-sm font-bold shrink-0">Sign in</a>
+            <button
+  onClick={() => (window.location.href = '/login/')}
+  className="px-5 py-2 rounded-full btn-purple text-sm font-bold shrink-0"
+>
+  Sign in
+</button>
           )}
         </div>
       </div>
