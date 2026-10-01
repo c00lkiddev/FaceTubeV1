@@ -70,8 +70,12 @@ export default function Login() {
 
           {err && <p className="text-xs text-red-500">{err}</p>}
 
-          <button
-            onClick={go}
+                            <button
+            type="button"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              go();
+            }}
             disabled={busy}
             className="w-full py-3 rounded-xl btn-purple font-bold disabled:opacity-50"
           >
