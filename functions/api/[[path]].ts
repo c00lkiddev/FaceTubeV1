@@ -326,6 +326,26 @@ export const onRequest = async (context: any) => {
       return json({ reset: true });
     }
 
+    if (path === '/api/admin/toggle-verify' && request.method === 'POST') {
+      const body: any = await request.json();
+      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      const current: any = await env.DB.prepare(
+        `SELECT bonusSubs FROM users WHERE id = ?`
+      ).bind(body.userId).first();
+      const newVal = (current?.bonusSubs || 0) >= 1000 ? 0 : 1000;
+      await env.DB.prepare(`UPDATE users SET bonusSubs = ? WHERE id = ?`)
+        .bind(newVal, body.userId).run();
+      return json({ verified: newVal >= 1000 });
+    }
+
+    if (path === '/api/admin/rename-user' && request.method === 'POST') {
+      const body: any = await request.json();
+      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      await env.DB.prepare(`UPDATE users SET name = ? WHERE id = ?`)
+        .bind(body.newName, body.userId).run();
+      return json({ renamed: true });
+    }
+
     if (path === '/api/admin/delete-user' && request.method === 'POST') {
       const body: any = await request.json();
       if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
@@ -356,6 +376,27 @@ export const onRequest = async (context: any) => {
       const body: any = await request.json();
       if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
       await env.DB.prepare(`DELETE FROM comments WHERE id = ?`).bind(body.commentId).run();
+      return json({ deleted: true });
+    }
+
+    if (path === '/api/admin/delete-any-comment' && request.method === 'POST') {
+      const body: any = await request.json();
+      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      await env.DB.prepare(`DELETE FROM comments WHERE userId = ?`).bind(body.userId).run();
+      return json({ deleted: true });
+    }
+
+    if (path === '/api/admin/delete-any-post' && request.method === 'POST') {
+      const body: any = await request.json();
+      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      await env.DB.prepare(`DELETE FROM posts WHERE authorId = ?`).bind(body.userId).run();
+      return json({ deleted: true });
+    }
+
+    if (path === '/api/admin/delete-any-video' && request.method === 'POST') {
+      const body: any = await request.json();
+      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      await env.DB.prepare(`DELETE FROM videos WHERE authorId = ?`).bind(body.userId).run();
       return json({ deleted: true });
     }
 

@@ -49,19 +49,19 @@ export default function Home() {
     <div className="min-h-screen pt-24 pb-16 px-5">
       <div className="max-w-2xl mx-auto space-y-5">
         {!uid && (
-          <div className="text-center py-16">
-            <div className="w-24 h-24 rounded-3xl btn-purple mx-auto grid place-items-center text-5xl font-black mb-8">
+          <div className="text-center py-10">
+            <div className="w-20 h-20 rounded-3xl btn-purple mx-auto grid place-items-center text-4xl font-black mb-5">
               F
             </div>
-            <h1 className="text-5xl sm:text-6xl font-black tracking-tight mb-4 text-navy-900">
+            <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-3 text-navy-900">
               Face<span className="gradient-text">Tube</span>
             </h1>
-            <p className="text-gray-500 mb-8 text-lg">Watch. Share. Connect.</p>
+            <p className="text-gray-500 mb-6">Watch. Share. Connect.</p>
             <button
               onClick={() => (window.location.href = '/login/')}
-              className="inline-block px-8 py-3.5 rounded-full btn-purple font-bold"
+              className="inline-block px-6 py-3 rounded-full btn-purple font-bold"
             >
-              Get started
+              Sign in to post
             </button>
           </div>
         )}
@@ -118,7 +118,7 @@ export default function Home() {
         {videos.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
             {videos.map((v) => (
-              <a key={v.id} href={`/watch?id=${v.id}`} className="block group">
+              <a key={v.id} href={`/watch/?id=${v.id}`} className="block group">
                 <div className="aspect-video rounded-2xl overflow-hidden bg-purple-50 border border-purple-100 group-hover:border-purple-300 transition">
                   {v.thumb ? (
                     <img
@@ -147,13 +147,13 @@ export default function Home() {
           </div>
         )}
 
-        {loading && !uid && (
+        {loading && (
           <p className="text-center text-gray-500 py-8">Loading…</p>
         )}
 
-        {!loading && posts.length === 0 && videos.length === 0 && uid && (
+        {!loading && posts.length === 0 && videos.length === 0 && (
           <p className="text-center text-gray-500 py-10">
-            Nothing here yet. Post something to get started.
+            Nothing here yet.
           </p>
         )}
       </div>
