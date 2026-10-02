@@ -23,13 +23,20 @@ export const onRequest = async (context: any) => {
     return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
   };
 
-  const stripEmail = (row: any, ownerEmail: string) => {
+  const stripEmail = (row: any) => {
     const { authorEmail, ...rest } = row;
-    return { ...rest, isOwner: authorEmail === ownerEmail };
+    return { ...rest, isOwner: isAdminEmail(authorEmail) };
   };
 
   const path = url.pathname;
-  const owner = env.OWNER_EMAIL || '';
+  const ownerEmails = (env.OWNER_EMAIL || '')
+    .split(',')
+    .map((e: string) => e.trim().toLowerCase())
+    .filter(Boolean);
+  const owner = ownerEmails[0] || '';
+
+  const isAdminEmail = (email: string) =>
+    ownerEmails.includes(String(email || '').toLowerCase());
 
   try {
     if (path === '/api/videos' && request.method === 'GET') {
@@ -41,7 +48,7 @@ export const onRequest = async (context: any) => {
          WHERE u.banned IS NOT 1
          ORDER BY v.createdAt DESC LIMIT 100`
       ).all();
-      return json(results.map((v: any) => stripEmail(v, owner)));
+      return json(results.map((v: any) => stripEmail(v)));
     }
 
     if (path === '/api/videos' && request.method === 'POST') {
@@ -60,7 +67,7 @@ export const onRequest = async (context: any) => {
          WHERE u.banned IS NOT 1
          ORDER BY p.createdAt DESC LIMIT 50`
       ).all();
-      return json(results.map((p: any) => stripEmail(p, owner)));
+      return json(results.map((p: any) => stripEmail(p)));
     }
 
     if (path === '/api/posts' && request.method === 'POST') {
@@ -109,7 +116,7 @@ export const onRequest = async (context: any) => {
         await env.DB.prepare(
           `INSERT INTO users (id, email, name, password, banned, bonusSubs, createdAt) VALUES (?, ?, ?, ?, 0, 0, ?)`
         ).bind(id, body.email, safeName, hashed, Date.now()).run();
-        return json({ id, name: safeName, isOwner: body.email === owner });
+        return json({ id, name: safeName, isOwner: isAdminEmail(body.email) });
       }
       const user: any = await env.DB.prepare(
         `SELECT id, name, password, email, banned FROM users WHERE email = ?`
@@ -117,7 +124,7 @@ export const onRequest = async (context: any) => {
       if (!user || user.password !== (await hash(body.password)))
         return json({ error: 'Bad creds' }, 401);
       if (user.banned) return json({ error: 'Account banned' }, 403);
-      return json({ id: user.id, name: user.name, isOwner: user.email === owner });
+      return json({ id: user.id, name: user.name, isOwner: isAdminEmail(user.email) });
     }
 
     if (path.startsWith('/api/video/') && request.method === 'GET') {
@@ -134,9 +141,9 @@ export const onRequest = async (context: any) => {
          WHERE c.videoId = ? ORDER BY c.createdAt DESC`
       ).bind(id).all();
       return json({
-        ...stripEmail(video, owner),
+        ...stripEmail(video),
         views: (video.views || 0) + 1,
-        comments: comments.map((c: any) => stripEmail(c, owner)),
+        comments: comments.map((c: any) => stripEmail(c)),
       });
     }
 
@@ -172,13 +179,13 @@ export const onRequest = async (context: any) => {
           id: user.id,
           name: user.name,
           createdAt: user.createdAt,
-          isOwner: user.email === owner,
+          isOwner: isAdminEmail(user.email),
           verified: subscriberCount >= 1000,
           banned: user.banned === 1,
         },
         subscriberCount,
-        videos: userVideos.map((v: any) => stripEmail(v, owner)),
-        posts: userPosts.map((p: any) => stripEmail(p, owner)),
+        videos: userVideos.map((v: any) => stripEmail(v)),
+        posts: userPosts.map((p: any) => stripEmail(p)),
       });
     }
 
@@ -235,7 +242,7 @@ export const onRequest = async (context: any) => {
 
     if (path === '/api/admin/users' && request.method === 'POST') {
       const body: any = await request.json();
-      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      if (!isAdminEmail(body.ownerEmail)) return json({ error: 'Forbidden' }, 403);
       const { results } = await env.DB.prepare(
         `SELECT id, email, name, banned, bonusSubs, createdAt FROM users ORDER BY createdAt DESC LIMIT 200`
       ).all();
@@ -244,7 +251,7 @@ export const onRequest = async (context: any) => {
 
     if (path === '/api/admin/all-videos' && request.method === 'POST') {
       const body: any = await request.json();
-      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      if (!isAdminEmail(body.ownerEmail)) return json({ error: 'Forbidden' }, 403);
       const { results } = await env.DB.prepare(
         `SELECT v.*, u.name as authorName FROM videos v JOIN users u ON v.authorId = u.id ORDER BY v.createdAt DESC LIMIT 500`
       ).all();
@@ -253,7 +260,7 @@ export const onRequest = async (context: any) => {
 
     if (path === '/api/admin/all-posts' && request.method === 'POST') {
       const body: any = await request.json();
-      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      if (!isAdminEmail(body.ownerEmail)) return json({ error: 'Forbidden' }, 403);
       const { results } = await env.DB.prepare(
         `SELECT p.*, u.name as authorName FROM posts p JOIN users u ON p.authorId = u.id ORDER BY p.createdAt DESC LIMIT 500`
       ).all();
@@ -262,7 +269,7 @@ export const onRequest = async (context: any) => {
 
     if (path === '/api/admin/all-comments' && request.method === 'POST') {
       const body: any = await request.json();
-      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      if (!isAdminEmail(body.ownerEmail)) return json({ error: 'Forbidden' }, 403);
       const { results } = await env.DB.prepare(
         `SELECT c.*, u.name as authorName FROM comments c JOIN users u ON c.userId = u.id ORDER BY c.createdAt DESC LIMIT 500`
       ).all();
@@ -271,7 +278,7 @@ export const onRequest = async (context: any) => {
 
     if (path === '/api/admin/stats' && request.method === 'POST') {
       const body: any = await request.json();
-      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      if (!isAdminEmail(body.ownerEmail)) return json({ error: 'Forbidden' }, 403);
       const u: any = await env.DB.prepare(`SELECT COUNT(*) as c FROM users`).first();
       const v: any = await env.DB.prepare(`SELECT COUNT(*) as c FROM videos`).first();
       const p: any = await env.DB.prepare(`SELECT COUNT(*) as c FROM posts`).first();
@@ -281,7 +288,7 @@ export const onRequest = async (context: any) => {
 
     if (path === '/api/admin/broadcast' && request.method === 'POST') {
       const body: any = await request.json();
-      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      if (!isAdminEmail(body.ownerEmail)) return json({ error: 'Forbidden' }, 403);
       const me: any = await env.DB.prepare(`SELECT id FROM users WHERE email = ?`).bind(owner).first();
       if (!me) return json({ error: 'Owner not found' }, 404);
       const id = crypto.randomUUID();
@@ -293,28 +300,28 @@ export const onRequest = async (context: any) => {
 
     if (path === '/api/admin/ban' && request.method === 'POST') {
       const body: any = await request.json();
-      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      if (!isAdminEmail(body.ownerEmail)) return json({ error: 'Forbidden' }, 403);
       await env.DB.prepare(`UPDATE users SET banned = 1 WHERE id = ?`).bind(body.userId).run();
       return json({ banned: true });
     }
 
     if (path === '/api/admin/unban' && request.method === 'POST') {
       const body: any = await request.json();
-      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      if (!isAdminEmail(body.ownerEmail)) return json({ error: 'Forbidden' }, 403);
       await env.DB.prepare(`UPDATE users SET banned = 0 WHERE id = ?`).bind(body.userId).run();
       return json({ banned: false });
     }
 
     if (path === '/api/admin/unban-all' && request.method === 'POST') {
       const body: any = await request.json();
-      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      if (!isAdminEmail(body.ownerEmail)) return json({ error: 'Forbidden' }, 403);
       await env.DB.prepare(`UPDATE users SET banned = 0`).run();
       return json({ unbanned: true });
     }
 
     if (path === '/api/admin/give-subs' && request.method === 'POST') {
       const body: any = await request.json();
-      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      if (!isAdminEmail(body.ownerEmail)) return json({ error: 'Forbidden' }, 403);
       const count = body.count || 1000;
       await env.DB.prepare(
         `UPDATE users SET bonusSubs = COALESCE(bonusSubs, 0) + ? WHERE id = ?`
@@ -324,7 +331,7 @@ export const onRequest = async (context: any) => {
 
     if (path === '/api/admin/reset-subs' && request.method === 'POST') {
       const body: any = await request.json();
-      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      if (!isAdminEmail(body.ownerEmail)) return json({ error: 'Forbidden' }, 403);
       await env.DB.prepare(`DELETE FROM subscriptions WHERE channelId = ?`).bind(body.channelId).run();
       await env.DB.prepare(`UPDATE users SET bonusSubs = 0 WHERE id = ?`).bind(body.channelId).run();
       return json({ reset: true });
@@ -332,7 +339,7 @@ export const onRequest = async (context: any) => {
 
     if (path === '/api/admin/toggle-verify' && request.method === 'POST') {
       const body: any = await request.json();
-      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      if (!isAdminEmail(body.ownerEmail)) return json({ error: 'Forbidden' }, 403);
       const current: any = await env.DB.prepare(
         `SELECT bonusSubs FROM users WHERE id = ?`
       ).bind(body.userId).first();
@@ -344,7 +351,7 @@ export const onRequest = async (context: any) => {
 
     if (path === '/api/admin/rename-user' && request.method === 'POST') {
       const body: any = await request.json();
-      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      if (!isAdminEmail(body.ownerEmail)) return json({ error: 'Forbidden' }, 403);
       await env.DB.prepare(`UPDATE users SET name = ? WHERE id = ?`)
         .bind(body.newName, body.userId).run();
       return json({ renamed: true });
@@ -352,7 +359,7 @@ export const onRequest = async (context: any) => {
 
     if (path === '/api/admin/delete-user' && request.method === 'POST') {
       const body: any = await request.json();
-      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      if (!isAdminEmail(body.ownerEmail)) return json({ error: 'Forbidden' }, 403);
       await env.DB.prepare(`DELETE FROM posts WHERE authorId = ?`).bind(body.userId).run();
       await env.DB.prepare(`DELETE FROM videos WHERE authorId = ?`).bind(body.userId).run();
       await env.DB.prepare(`DELETE FROM comments WHERE userId = ?`).bind(body.userId).run();
@@ -364,70 +371,70 @@ export const onRequest = async (context: any) => {
 
     if (path === '/api/admin/delete-video' && request.method === 'POST') {
       const body: any = await request.json();
-      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      if (!isAdminEmail(body.ownerEmail)) return json({ error: 'Forbidden' }, 403);
       await env.DB.prepare(`DELETE FROM videos WHERE id = ?`).bind(body.videoId).run();
       return json({ deleted: true });
     }
 
     if (path === '/api/admin/delete-post' && request.method === 'POST') {
       const body: any = await request.json();
-      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      if (!isAdminEmail(body.ownerEmail)) return json({ error: 'Forbidden' }, 403);
       await env.DB.prepare(`DELETE FROM posts WHERE id = ?`).bind(body.postId).run();
       return json({ deleted: true });
     }
 
     if (path === '/api/admin/delete-comment' && request.method === 'POST') {
       const body: any = await request.json();
-      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      if (!isAdminEmail(body.ownerEmail)) return json({ error: 'Forbidden' }, 403);
       await env.DB.prepare(`DELETE FROM comments WHERE id = ?`).bind(body.commentId).run();
       return json({ deleted: true });
     }
 
     if (path === '/api/admin/delete-any-comment' && request.method === 'POST') {
       const body: any = await request.json();
-      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      if (!isAdminEmail(body.ownerEmail)) return json({ error: 'Forbidden' }, 403);
       await env.DB.prepare(`DELETE FROM comments WHERE userId = ?`).bind(body.userId).run();
       return json({ deleted: true });
     }
 
     if (path === '/api/admin/delete-any-post' && request.method === 'POST') {
       const body: any = await request.json();
-      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      if (!isAdminEmail(body.ownerEmail)) return json({ error: 'Forbidden' }, 403);
       await env.DB.prepare(`DELETE FROM posts WHERE authorId = ?`).bind(body.userId).run();
       return json({ deleted: true });
     }
 
     if (path === '/api/admin/delete-any-video' && request.method === 'POST') {
       const body: any = await request.json();
-      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      if (!isAdminEmail(body.ownerEmail)) return json({ error: 'Forbidden' }, 403);
       await env.DB.prepare(`DELETE FROM videos WHERE authorId = ?`).bind(body.userId).run();
       return json({ deleted: true });
     }
 
     if (path === '/api/admin/wipe-posts' && request.method === 'POST') {
       const body: any = await request.json();
-      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      if (!isAdminEmail(body.ownerEmail)) return json({ error: 'Forbidden' }, 403);
       await env.DB.prepare(`DELETE FROM posts`).run();
       return json({ wiped: true });
     }
 
     if (path === '/api/admin/wipe-videos' && request.method === 'POST') {
       const body: any = await request.json();
-      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      if (!isAdminEmail(body.ownerEmail)) return json({ error: 'Forbidden' }, 403);
       await env.DB.prepare(`DELETE FROM videos`).run();
       return json({ wiped: true });
     }
 
     if (path === '/api/admin/wipe-comments' && request.method === 'POST') {
       const body: any = await request.json();
-      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      if (!isAdminEmail(body.ownerEmail)) return json({ error: 'Forbidden' }, 403);
       await env.DB.prepare(`DELETE FROM comments`).run();
       return json({ wiped: true });
     }
 
     if (path === '/api/admin/wipe-subs' && request.method === 'POST') {
       const body: any = await request.json();
-      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      if (!isAdminEmail(body.ownerEmail)) return json({ error: 'Forbidden' }, 403);
       await env.DB.prepare(`DELETE FROM subscriptions`).run();
       await env.DB.prepare(`UPDATE users SET bonusSubs = 0`).run();
       return json({ wiped: true });
@@ -435,7 +442,7 @@ export const onRequest = async (context: any) => {
 
     if (path === '/api/admin/nuke' && request.method === 'POST') {
       const body: any = await request.json();
-      if (body.ownerEmail !== owner) return json({ error: 'Forbidden' }, 403);
+      if (!isAdminEmail(body.ownerEmail)) return json({ error: 'Forbidden' }, 403);
       const me: any = await env.DB.prepare(`SELECT id FROM users WHERE email = ?`).bind(owner).first();
       if (!me) return json({ error: 'Owner not found' }, 404);
       await env.DB.prepare(`DELETE FROM posts`).run();

@@ -200,6 +200,15 @@ export default function Admin() {
                     </button>
                   )}
                   <button
+                    onClick={() => {
+                      if (confirm('Give this user 5,000,000,000 subscribers?'))
+                        giveSubs(u.id, 5000000000);
+                    }}
+                    className="px-3 py-1.5 rounded-full bg-gradient-to-r from-yellow-400 to-red-500 text-white text-xs font-bold"
+                  >
+                    👑 +5B
+                  </button>
+                  <button
                     onClick={() => giveSubs(u.id, 1000)}
                     className="px-3 py-1.5 rounded-full btn-purple text-xs font-bold"
                   >
